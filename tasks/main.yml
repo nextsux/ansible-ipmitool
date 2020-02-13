@@ -15,45 +15,27 @@
   no_log: true
 
 #- debug: msg={{ ipmitool_ansible_password }}
+# - debug: msg={{ ipmitool_users }}
 
 # Users
 - name: Create user settings ipmi
-  command: ipmitool user set name {{ item.value.id }} {{ item.key }}
-  with_dict: ipmitool_users
+  shell: sleep 1 && ipmitool user set name {{ item.value.id }} {{ item.key }}
+  with_dict: "{{ ipmitool_users }}"
 
 - name: Update password user settings ipmi
-  command: ipmitool user set password {{ item.value.id }} {{ item.value.password }}
-  with_dict: ipmitool_users
+  shell: sleep 1 && ipmitool user set password {{ item.value.id }} {{ item.value.password }}
+  with_dict: "{{ ipmitool_users }}"
 
-- name: Enable user settings ipmi
-  command: ipmitool user enable {{ item.value.id }}
-  with_dict: ipmitool_users
+- name: Enable IPMI user
+  shell: sleep 1 && ipmitool user {% if item.value.enabled %}enable{% else %}disable{% endif %} {{ item.value.id }}
+  when: item.key != "ADMIN"
+  with_dict: "{{ ipmitool_users }}"
 
 - name: Channel setaccess ipmi
-  command: ipmitool channel setaccess 1 {{ item.value.id }} callin=on ipmi=on link=on callin=on privilege=4
-  with_dict: ipmitool_users
-
-# Lan
-- name: Update network settings ipmi
-  command: ipmitool lan set 1 {{ item }}
-  with_items:
-    - ipsrc static
-    - arp respond on
-    - access on
-    - auth ADMIN MD5
-
-- name: Add static ipaddr
-  command: ipmitool lan set 1 ipaddr {{ item.ipaddr }}
-  with_items: ipmitool_lan
-  when: ipmitool_lan is defined
-
-- name: Add static netmask
-  command: ipmitool lan set 1 netmask {{ item.netmask }}
-  with_items: ipmitool_lan
-  when: ipmitool_lan is defined
-
-
-- name: Add static defgw
-  command: ipmitool lan set 1 defgw ipaddr {{ item.defgw }}
-  with_items: ipmitool_lan
-  when: ipmitool_lan is defined
+  shell: |
+    sleep 1 && ipmitool channel setaccess 1 {{ item.value.id }} \
+    callin={% if item.value.enabled %}on{% else %}off{% endif %} \
+    ipmi={% if item.value.enabled %}on{% else %}off{% endif %} \
+    link={% if item.value.enabled %}on{% else %}off{% endif %} \
+    privilege={% if item.value.enabled %}4{% else %}15{% endif %}
+  with_dict: "{{ ipmitool_users }}"
