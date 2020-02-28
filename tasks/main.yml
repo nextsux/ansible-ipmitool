@@ -10,9 +10,13 @@
     - ipmi_si
     - ipmi_devintf
 
-- name: import secret variable file
-  include_vars: "vault.yml"
-  no_log: true
+# - name: all vars
+#   debug:
+#     msg: '{{ vars }}'
+
+# - name: import secret variable file
+#   include_vars: "vault.yml"
+#   no_log: true
 
 #- debug: msg={{ ipmitool_ansible_password }}
 # - debug: msg={{ ipmitool_users }}
